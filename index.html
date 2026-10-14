@@ -1,0 +1,491 @@
+<title>Airline CEO béta</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Airline CEO manager game – zárt körű béta indulás: 2026. november 5., 20:00">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* Layout: egyetlen oszlop – fejléc, cím, indulási tábla (visszaszámláló), útvonal-sáv, négy jellemző-csempe. Egyetlen sötét megjelenés, a bemutató PDF-hez igazítva. */
+:root {
+  --bg: #0b1730;
+  --bg-deep: #081124;
+  --panel: #10203f;
+  --panel-line: #1f3460;
+  --fg: #f3f6fc;
+  --muted: #9fb0cf;
+  --dim: #6b7fa6;
+  --orange: #ff5a36;
+  --yellow: #ffc93c;
+  --teal: #2ec4b6;
+  --blue: #4da3ff;
+  --purple: #8b7cf6;
+  --ink: #0b1730;
+  --f-display: "Poppins", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background:
+    radial-gradient(900px 520px at 100% 0%, rgba(255, 90, 54, 0.22), transparent 60%),
+    radial-gradient(800px 600px at 0% 100%, rgba(46, 196, 182, 0.14), transparent 60%),
+    var(--bg);
+  color: var(--fg);
+  font-family: var(--f-body);
+  font-size: 16px;
+  line-height: 1.55;
+  min-height: 100vh;
+}
+.rainbow {
+  height: 5px;
+  background: linear-gradient(90deg, var(--orange), var(--yellow), var(--teal), var(--blue), var(--purple));
+}
+.wrap {
+  max-width: 980px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--f-mono);
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.pill {
+  font-family: var(--f-mono);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--yellow);
+  color: var(--ink);
+  padding: 8px 14px;
+  border-radius: 6px;
+}
+h1 {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: clamp(42px, 9vw, 84px);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+h1 .ceo { color: var(--orange); }
+h1 .game { color: var(--yellow); display: block; }
+.lead {
+  max-width: 62ch;
+  margin: 18px 0 0;
+  font-size: clamp(17px, 2.2vw, 20px);
+  color: #dbe3f3;
+}
+
+/* Indulási tábla */
+.board {
+  background: var(--bg-deep);
+  border: 1px solid var(--panel-line);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.7);
+}
+.board-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 20px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--panel-line);
+  font-family: var(--f-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.board-head b { color: var(--fg); font-weight: 500; }
+.flight {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 6px 18px;
+  padding: 18px 20px 6px;
+  font-family: var(--f-mono);
+}
+.flight .no { color: var(--yellow); font-weight: 700; font-size: 18px; }
+.flight .route { min-width: 0; color: var(--fg); font-size: 15px; }
+.flight .route span { color: var(--dim); }
+.status {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  color: var(--teal);
+  white-space: nowrap;
+}
+.status.boarding { color: var(--yellow); }
+.status.live { color: var(--ink); background: var(--teal); border-color: var(--teal); }
+
+.count {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px 20px 22px;
+}
+.cell {
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 12px;
+  padding: 16px 8px 12px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.cell::after {
+  /* a split-flap tábla középvonala */
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 1px;
+  background: rgba(8, 17, 36, 0.85);
+}
+.num {
+  font-family: var(--f-mono);
+  font-weight: 700;
+  font-size: clamp(38px, 10vw, 88px);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  display: block;
+}
+.unit {
+  display: block;
+  margin-top: 10px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.cell:nth-child(1) .num { color: var(--orange); }
+.cell:nth-child(2) .num { color: var(--yellow); }
+.cell:nth-child(3) .num { color: var(--teal); }
+.cell:nth-child(4) .num { color: var(--blue); }
+.flip { animation: flip 0.35s ease-out; }
+@keyframes flip {
+  from { transform: translateY(-14%); opacity: 0.35; }
+  to { transform: none; opacity: 1; }
+}
+
+/* Útvonal-sáv: a mai naptól a nyitásig */
+.track {
+  padding: 4px 20px 22px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--f-mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+.track b { color: var(--fg); font-weight: 500; display: block; font-size: 14px; }
+.track .end { text-align: right; }
+.line {
+  position: relative;
+  height: 24px;
+}
+.line::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  border-top: 2px dashed var(--panel-line);
+}
+.line .done {
+  position: absolute;
+  left: 0; top: calc(50% - 1px);
+  height: 2px;
+  background: var(--orange);
+  width: 0%;
+}
+.line .plane {
+  position: absolute;
+  top: 50%;
+  left: 0%;
+  width: 22px; height: 22px;
+  transform: translate(-50%, -50%) rotate(90deg);
+  color: var(--orange);
+}
+.line .dot {
+  position: absolute;
+  top: 50%;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--teal);
+  background: var(--bg-deep);
+}
+.line .dot.a { left: 0; }
+.line .dot.b { left: 100%; border-color: var(--yellow); }
+
+.live-msg {
+  display: none;
+  padding: 0 20px 22px;
+  font-size: 18px;
+  color: var(--fg);
+}
+.is-live .live-msg { display: block; }
+.is-live .track { display: none; }
+
+.note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Jellemzők */
+.section-label {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin: 0 0 10px;
+}
+h2 {
+  font-family: var(--f-display);
+  font-size: clamp(26px, 4.4vw, 38px);
+  line-height: 1.15;
+  margin: 0 0 22px;
+  text-wrap: balance;
+}
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+.tile {
+  border-radius: 12px;
+  padding: 16px;
+  color: var(--ink);
+  min-width: 0;
+}
+.tile small {
+  display: block;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin-bottom: 4px;
+}
+.tile strong { font-family: var(--f-display); font-weight: 600; font-size: 16px; line-height: 1.3; display: block; }
+.tile p { margin: 8px 0 0; font-size: 14px; line-height: 1.45; }
+.t1 { background: var(--orange); color: #fff; }
+.t2 { background: var(--yellow); }
+.t3 { background: var(--teal); }
+.t4 { background: var(--blue); }
+
+.start {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.stat {
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: 12px;
+  padding: 16px;
+}
+.stat .big {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-size: 30px;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.stat .lbl { color: var(--muted); font-size: 14px; }
+
+footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: var(--f-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+  border-top: 1px solid var(--panel-line);
+  padding-top: 18px;
+}
+footer .o { color: var(--orange); font-weight: 700; }
+
+@media (max-width: 720px) {
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .start { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .wrap { padding-block: 28px 40px; gap: 32px; }
+  .count { gap: 8px; padding: 14px 12px 18px; }
+  .cell { padding: 12px 4px 10px; }
+  .unit { font-size: 10px; letter-spacing: 0.1em; }
+  .flight { grid-template-columns: auto 1fr; padding: 16px 14px 4px; }
+  .flight .status { grid-column: 1 / -1; justify-self: start; }
+  .board-head, .track, .live-msg { padding-left: 14px; padding-right: 14px; }
+  .tiles { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flip { animation: none; }
+}
+</style>
+
+<div class="rainbow" aria-hidden="true"></div>
+<main class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="34" height="18" viewBox="0 0 34 18" aria-hidden="true"><path d="M3 15 Q17 -3 31 15" fill="none" stroke="#ff5a36" stroke-width="4" stroke-linecap="round"/></svg>
+      Airline management · valós időben
+    </div>
+    <div class="pill">Zárt béta · 2026. nov. 5. · 20:00</div>
+  </header>
+
+  <section>
+    <h1>Airline <span class="ceo">CEO</span><span class="game">manager game</span></h1>
+    <p class="lead">Légy egy légitársaság vezérigazgatója. Indulj Budapestről 20 millió euróval és két géppel, és építs nyereséges hálózatot. Minden járat valós időben repül, valós időjárásban.</p>
+  </section>
+
+  <section class="board" id="board" aria-label="Visszaszámlálás a zárt béta indulásáig">
+    <div class="board-head">
+      <span>Indulások · <b>LHBP Budapest</b></span>
+      <span>Helyi idő: <b id="now">--:--:--</b></span>
+    </div>
+    <div class="flight">
+      <span class="no">BETA01</span>
+      <span class="route">LHBP Budapest → Zárt béta <span>· STD 20:00 · 2026.11.05.</span></span>
+      <span class="status" id="status">Menetrend szerint</span>
+    </div>
+    <div class="count" role="timer" aria-live="off">
+      <div class="cell"><span class="num" id="d">--</span><span class="unit">nap</span></div>
+      <div class="cell"><span class="num" id="h">--</span><span class="unit">óra</span></div>
+      <div class="cell"><span class="num" id="m">--</span><span class="unit">perc</span></div>
+      <div class="cell"><span class="num" id="s">--</span><span class="unit">másodperc</span></div>
+    </div>
+    <div class="track" aria-hidden="true">
+      <span><b>BEJELENTÉS</b>okt. 14.</span>
+      <div class="line">
+        <span class="done" id="done"></span>
+        <span class="dot a"></span>
+        <span class="dot b"></span>
+        <svg class="plane" id="plane" viewBox="0 0 24 24"><path fill="currentColor" d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>
+      </div>
+      <span class="end"><b>NYITÁS</b>nov. 5.</span>
+    </div>
+    <p class="live-msg"><strong>Felszálltunk!</strong> A zárt béta elindult. A belépési linket külön küldöm el neked.</p>
+  </section>
+
+  <p class="note">Ez egy zárt körű béta ismerősöknek. A nyitáskor mindenki személyesen kapja meg a linket és a belépési adatokat. Ingyenes, böngészőben fut, telefonon és gépen is.</p>
+
+  <section>
+    <p class="section-label">Mire számíthatsz</p>
+    <h2>Te vagy a CEO. A döntés a tiéd, a következménye is.</h2>
+    <div class="tiles">
+      <div class="tile t1"><small>Idő</small><strong>Szigorúan 1:1 valós idő</strong><p>Ha a BUD102 9-kor indul Londonból, akkor 9-kor indul, és ott jár a térképen, ahol egy igazi gép járna.</p></div>
+      <div class="tile t2"><small>Időjárás</small><strong>Valós METAR és TAF</strong><p>Naponta négyszer frissül. Köd, zivatar, jégtelenítés, slot és kitérő reptér.</p></div>
+      <div class="tile t3"><small>Világ</small><strong>Közös térkép, több játékos</strong><p>A többi vezérigazgató gépeit is látod repülni, ugyanabban a pillanatban.</p></div>
+      <div class="tile t4"><small>Eszköz</small><strong>Böngésző, telefon és gép</strong><p>Akkor is fut, ha nem nézed. Visszatéréskor minden ott tart, ahol a valóságban tartana.</p></div>
+    </div>
+    <div class="start">
+      <div class="stat"><div class="big">20 M€</div><div class="lbl">induló tőke, bázis: Budapest Liszt Ferenc (LHBP)</div></div>
+      <div class="stat"><div class="big">2 gép</div><div class="lbl">saját flotta az első napon, ATR 72-től A321neo-ig bővíthető</div></div>
+      <div class="stat"><div class="big">9 611</div><div class="lbl">valós repülőtér futópályákkal a térképen</div></div>
+    </div>
+  </section>
+
+  <footer>
+    <span><span class="o">Airline CEO</span> manager game</span>
+    <span>Zárt béta · 2026. november 5. · 20:00 (CET)</span>
+  </footer>
+</main>
+
+<script>
+(function () {
+  // 2026. november 5., 20:00 budapesti idő (téli időszámítás, UTC+1)
+  var TARGET = Date.parse("2026-11-05T20:00:00+01:00");
+  // A visszaszámláló sáv kezdőpontja: a bejelentés napja
+  var START = Date.parse("2026-10-14T00:00:00+02:00");
+
+  var els = {
+    d: document.getElementById("d"),
+    h: document.getElementById("h"),
+    m: document.getElementById("m"),
+    s: document.getElementById("s"),
+    now: document.getElementById("now"),
+    status: document.getElementById("status"),
+    done: document.getElementById("done"),
+    plane: document.getElementById("plane"),
+    board: document.getElementById("board")
+  };
+  var timeFmt;
+  try {
+    timeFmt = new Intl.DateTimeFormat("hu-HU", { timeZone: "Europe/Budapest", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  } catch (e) { timeFmt = null; }
+
+  function pad(n) { return n < 10 ? "0" + n : String(n); }
+  function set(el, val) {
+    if (el.textContent === val) return;
+    el.textContent = val;
+    el.classList.remove("flip");
+    void el.offsetWidth;
+    el.classList.add("flip");
+  }
+
+  function tick() {
+    var now = Date.now();
+    if (timeFmt) els.now.textContent = timeFmt.format(now);
+    var diff = Math.max(0, TARGET - now);
+    var sec = Math.floor(diff / 1000);
+    set(els.d, pad(Math.floor(sec / 86400)));
+    set(els.h, pad(Math.floor(sec % 86400 / 3600)));
+    set(els.m, pad(Math.floor(sec % 3600 / 60)));
+    set(els.s, pad(sec % 60));
+
+    var p = Math.min(1, Math.max(0, (now - START) / (TARGET - START)));
+    els.done.style.width = (p * 100) + "%";
+    els.plane.style.left = (p * 100) + "%";
+
+    if (diff === 0) {
+      els.board.classList.add("is-live");
+      els.status.textContent = "Elindult";
+      els.status.className = "status live";
+    } else if (diff < 3600 * 1000) {
+      els.status.textContent = "Beszállás";
+      els.status.className = "status boarding";
+    } else {
+      els.status.textContent = "Menetrend szerint";
+      els.status.className = "status";
+    }
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
